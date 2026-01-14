@@ -279,23 +279,52 @@ namespace PowerNodeGenUI
 
         // ---------------- keyword actions ----------------
 
+        //void AddKeyword(TextBox box, ListBox list)
+        //{
+        //    var key = box.Text.Trim();
+        //    if (string.IsNullOrEmpty(key)) return;
+
+        //    foreach (var item in list.Items)
+        //    {
+        //        if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            box.Clear();
+        //            return;
+        //        }
+        //    }
+
+        //    list.Items.Add(key);
+        //    box.Clear();
+        //}
+
         void AddKeyword(TextBox box, ListBox list)
         {
-            var key = box.Text.Trim();
-            if (string.IsNullOrEmpty(key)) return;
+            var raw = (box.Text ?? "").Trim();
+            if (raw.Length == 0) return;
 
-            foreach (var item in list.Items)
+            // Split 
+            char[] seps = new[] { ' ', '\t', '\r', '\n', ',', ';'};
+            var parts = raw.Split(seps, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 0) { box.Clear(); return; }
+
+            // Fast de-dupe (case-insensitive)
+            var existing = new HashSet<string>(
+                list.Items.Cast<object>().Select(x => x?.ToString() ?? ""),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            foreach (var p in parts)
             {
-                if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
-                {
-                    box.Clear();
-                    return;
-                }
+                var key = p.Trim();
+                if (key.Length == 0) continue;
+                if (existing.Add(key))
+                    list.Items.Add(key);
             }
 
-            list.Items.Add(key);
             box.Clear();
         }
+
 
         void RemoveSelected(ListBox list)
         {
