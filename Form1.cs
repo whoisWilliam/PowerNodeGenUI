@@ -13,7 +13,7 @@ using WinFont = System.Drawing.Font;
 using WinFontStyle = System.Drawing.FontStyle;
 using WinLabel = System.Windows.Forms.Label;
 
-namespace bk
+namespace PowerNodeGenUI
 {
     public class Form1 : Form
     {
@@ -36,6 +36,8 @@ namespace bk
         Button btnSubmit = new() { Text = "Submit", Width = 140, Height = 36, Margin = new Padding(0, 2, 0, 2) };
         WinLabel lblStatus = new() { AutoSize = false, Text = "Ready", Width = 300, Height = 36, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, Margin = new Padding(8, 2, 0, 2) };
 
+
+        Button btnOpenCsv = new() { Text = "Open CSV", Width = 120, Height = 36, Margin = new Padding(8, 2, 0, 2) };
         DataGridView dgv = new() { Dock = DockStyle.Fill };
 
         readonly string generatorExeFile = "PowerNodeGen.exe";
@@ -100,6 +102,10 @@ namespace bk
             btnClearExclude.Click += (s, e) => lstExclude.Items.Clear();
             btnSubmit.Click += async (s, e) => await RunAsync();
 
+
+            btnOpenCsv.Click += (s, e) => OpenCsv();
+            btnOpenCsv.Enabled = File.Exists(txtOutCsv.Text.Trim());
+            txtOutCsv.TextChanged += (s, e) => btnOpenCsv.Enabled = File.Exists(txtOutCsv.Text.Trim());
             SetupGridStyle();
         }
 
@@ -238,6 +244,7 @@ namespace bk
             // btnSubmit already has Margin (0,2,0,2). lblStatus uses same top/bottom margin and same Height.
             runPanel.Controls.Add(btnSubmit);
             runPanel.Controls.Add(lblStatus);
+            runPanel.Controls.Add(btnOpenCsv);
 
             panel.Controls.Add(runPanel);
             return panel;
@@ -311,6 +318,35 @@ namespace bk
 
         // ---------------- submit -> generate csv -> display ----------------
 
+        void OpenCsv()
+        {
+            string path = txtOutCsv.Text.Trim();
+            if (string.IsNullOrEmpty(path))
+            {
+                MessageBox.Show("Output CSV path is empty.");
+                return;
+            }
+
+            if (!File.Exists(path))
+            {
+                MessageBox.Show("CSV file not found. Please run Submit first (or check the Output path).");
+                return;
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to open CSV.\n\n" + ex.Message);
+            }
+        }
+
         async Task RunAsync()
         {
             if (!File.Exists(txtNets.Text)) { MessageBox.Show("Nets.asc not found."); return; }
@@ -333,6 +369,7 @@ namespace bk
 
             //btnSubmit.Enabled = false;
             lblStatus.Text = "Running...";
+            btnOpenCsv.Enabled = false;
 
             try
             {
@@ -356,6 +393,7 @@ namespace bk
 
                 LoadCsvToGrid(outCsv);
                 lblStatus.Text = $"Done. Rows: {dgv.Rows.Count}";
+                btnOpenCsv.Enabled = File.Exists(outCsv);
             }
             finally
             {
