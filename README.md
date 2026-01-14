@@ -1,6 +1,6 @@
 # PowerNodeGenUI
 * future insight upgrades:
-  * open csv
+  * open csv ✅
   * clear all ✅
   * only show nets with nail
   * default filter

@@ -24,6 +24,7 @@ namespace PowerNodeGenUI
 
         TextBox txtInclude = new() { Width = 260 };
         TextBox txtExclude = new() { Width = 260 };
+        CheckBox chkOnlyWithNails = new() { Text = "Only show nets with nails", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(10, 6, 0, 0) };
         ListBox lstInclude = new() { Width = 260, Height = 110 };
         ListBox lstExclude = new() { Width = 260, Height = 110 };
 
@@ -174,13 +175,14 @@ namespace PowerNodeGenUI
             var panel = new GroupBox { Text = "Keywords", Dock = DockStyle.Fill, Padding = new Padding(10) };
 
             // ✅ 3 rows：Submit/Status 另外搬到獨立區塊，避免擠壓 keyword list
-            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 3 };
+            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 3 };
 
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
 
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));       // inputs
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // list
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // remove buttons
@@ -209,6 +211,7 @@ namespace PowerNodeGenUI
             t.Controls.Add(lblExclude, 2, 0);
 
             t.Controls.Add(txtExclude, 3, 0);
+            t.Controls.Add(chkOnlyWithNails, 4, 0);
 
             t.Controls.Add(lstInclude, 1, 1);
             t.Controls.Add(lstExclude, 3, 1);
@@ -373,9 +376,11 @@ namespace PowerNodeGenUI
 
             try
             {
+                var cmdArgs = $"--nets \"{txtNets.Text}\" --nails \"{txtNails.Text}\" --cfg \"{cfgPath}\" --out \"{outCsv}\"";
+                if (chkOnlyWithNails.Checked) cmdArgs += " --only-nails";
+
                 var (code, so, se) = await Task.Run(() =>
-                    RunProcess(exePath,
-                        $"--nets \"{txtNets.Text}\" --nails \"{txtNails.Text}\" --cfg \"{cfgPath}\" --out \"{outCsv}\""));
+                    RunProcess(exePath, cmdArgs));
 
                 if (code != 0)
                 {
