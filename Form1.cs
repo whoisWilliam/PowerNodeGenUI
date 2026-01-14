@@ -7,13 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Net.Mime.MediaTypeNames;    
+using static System.Net.Mime.MediaTypeNames;
 using WinColor = System.Drawing.Color;
 using WinFont = System.Drawing.Font;
 using WinFontStyle = System.Drawing.FontStyle;
 using WinLabel = System.Windows.Forms.Label;
 
-namespace PowerNodeGenUI
+namespace bk
 {
     public class Form1 : Form
     {
@@ -27,9 +27,11 @@ namespace PowerNodeGenUI
         ListBox lstInclude = new() { Width = 260, Height = 110 };
         ListBox lstExclude = new() { Width = 260, Height = 110 };
 
-        // 統一設定 Remove 按鈕高度與 margin 以利垂直置中
+
         Button btnRemoveInclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
         Button btnRemoveExclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
+        Button btnClearInclude = new() { Text = "Clear", Width = 90, Height = 28, Margin = new Padding(0) };
+        Button btnClearExclude = new() { Text = "Clear", Width = 90, Height = 28, Margin = new Padding(0) };
 
         Button btnSubmit = new() { Text = "Submit", Width = 140, Height = 36, Margin = new Padding(0, 2, 0, 2) };
         WinLabel lblStatus = new() { AutoSize = false, Text = "Ready", Width = 300, Height = 36, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, Margin = new Padding(8, 2, 0, 2) };
@@ -56,7 +58,7 @@ namespace PowerNodeGenUI
                 Padding = new Padding(8)
             };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 135));
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 360)); // keywords (taller so list area is more usable)
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 260)); // keywords (taller so list area is more usable)
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));  // run bar (Submit + status) - avoid focus outline clipping
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
@@ -94,7 +96,8 @@ namespace PowerNodeGenUI
 
             btnRemoveInclude.Click += (s, e) => RemoveSelected(lstInclude);
             btnRemoveExclude.Click += (s, e) => RemoveSelected(lstExclude);
-
+            btnClearInclude.Click += (s, e) => lstInclude.Items.Clear();
+            btnClearExclude.Click += (s, e) => lstExclude.Items.Clear();
             btnSubmit.Click += async (s, e) => await RunAsync();
 
             SetupGridStyle();
@@ -175,6 +178,8 @@ namespace PowerNodeGenUI
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));       // inputs
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // list
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // remove buttons
+            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 600));        // spacer
+            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // clear buttons
 
             // Use fixed-size labels docked and vertically centered to align text with textboxes
             var lblInclude = new WinLabel
@@ -205,10 +210,12 @@ namespace PowerNodeGenUI
             // 使用 FlowLayoutPanel 並以 Padding 將 Remove 按鈕垂直置中
             var leftButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
             leftButtons.Controls.Add(btnRemoveInclude);
+            leftButtons.Controls.Add(btnClearInclude);
             t.Controls.Add(leftButtons, 1, 2);
 
             var rightButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
             rightButtons.Controls.Add(btnRemoveExclude);
+            rightButtons.Controls.Add(btnClearExclude);
             t.Controls.Add(rightButtons, 3, 2);
             panel.Controls.Add(t);
             return panel;
