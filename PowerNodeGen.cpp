@@ -459,7 +459,7 @@ int main(int argc, char* argv[]) {
             if (netTok.size() < 2 || netTok[0] != '#') continue;
 
             int net_id = 0;
-                for (int i = 1; i < netTok.size(); i++) {
+            for (int i = 1; i < netTok.size(); i++) {
                 if (!isdigit(netTok[i])) { net_id = 0; break; }
                 net_id = net_id * 10 + (netTok[i] - '0');
             }

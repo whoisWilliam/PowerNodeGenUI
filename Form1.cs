@@ -24,10 +24,11 @@ namespace PowerNodeGenUI
 
         TextBox txtInclude = new() { Width = 260 };
         TextBox txtExclude = new() { Width = 260 };
-        CheckBox chkOnlyWithNails = new() { Text = "Only show nets with nails", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(10, 6, 0, 0) };
         ListBox lstInclude = new() { Width = 260, Height = 110 };
         ListBox lstExclude = new() { Width = 260, Height = 110 };
 
+        // Only show nets with nails (nail_id != 0)
+        CheckBox chkOnlyWithNails = new() { Text = "Only show nets with nails", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(10, 6, 0, 0) };
 
         Button btnRemoveInclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
         Button btnRemoveExclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
@@ -37,8 +38,11 @@ namespace PowerNodeGenUI
         Button btnSubmit = new() { Text = "Submit", Width = 140, Height = 36, Margin = new Padding(0, 2, 0, 2) };
         WinLabel lblStatus = new() { AutoSize = false, Text = "Ready", Width = 300, Height = 36, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, Margin = new Padding(8, 2, 0, 2) };
 
-
         Button btnOpenCsv = new() { Text = "Open CSV", Width = 120, Height = 36, Margin = new Padding(8, 2, 0, 2) };
+
+        // NEW: import old CSV to compare
+        Button btnImportOldCsv = new() { Text = "Import Old CSV", Width = 150, Height = 36, Margin = new Padding(8, 2, 0, 2) };
+
         DataGridView dgv = new() { Dock = DockStyle.Fill };
 
         readonly string generatorExeFile = "PowerNodeGen.exe";
@@ -62,7 +66,7 @@ namespace PowerNodeGenUI
             };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 135));
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 260)); // keywords (taller so list area is more usable)
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));  // run bar (Submit + status) - avoid focus outline clipping
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));  // run bar (Submit + status)
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             root.Controls.Add(BuildFilePanel(), 0, 0);
@@ -101,12 +105,16 @@ namespace PowerNodeGenUI
             btnRemoveExclude.Click += (s, e) => RemoveSelected(lstExclude);
             btnClearInclude.Click += (s, e) => lstInclude.Items.Clear();
             btnClearExclude.Click += (s, e) => lstExclude.Items.Clear();
-            btnSubmit.Click += async (s, e) => await RunAsync();
 
+            btnSubmit.Click += async (s, e) => await RunAsync();
 
             btnOpenCsv.Click += (s, e) => OpenCsv();
             btnOpenCsv.Enabled = File.Exists(txtOutCsv.Text.Trim());
             txtOutCsv.TextChanged += (s, e) => btnOpenCsv.Enabled = File.Exists(txtOutCsv.Text.Trim());
+
+            // NEW
+            btnImportOldCsv.Click += (s, e) => ImportOldCsvAndCompare();
+
             SetupGridStyle();
         }
 
@@ -174,22 +182,20 @@ namespace PowerNodeGenUI
         {
             var panel = new GroupBox { Text = "Keywords", Dock = DockStyle.Fill, Padding = new Padding(10) };
 
-            // ✅ 3 rows：Submit/Status 另外搬到獨立區塊，避免擠壓 keyword list
+            // inputs + lists + button row
             var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 3 };
 
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
-
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));       // inputs
-            t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));   // list
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // remove buttons
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 600));        // spacer
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // clear buttons
 
-            // Use fixed-size labels docked and vertically centered to align text with textboxes
+            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));       // inputs
+            t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));       // list
+            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // remove buttons
+
+            // labels
             var lblInclude = new WinLabel
             {
                 Text = "Include",
@@ -198,7 +204,6 @@ namespace PowerNodeGenUI
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
             t.Controls.Add(lblInclude, 0, 0);
-
             t.Controls.Add(txtInclude, 1, 0);
 
             var lblExclude = new WinLabel
@@ -209,14 +214,14 @@ namespace PowerNodeGenUI
                 TextAlign = System.Drawing.ContentAlignment.MiddleLeft
             };
             t.Controls.Add(lblExclude, 2, 0);
-
             t.Controls.Add(txtExclude, 3, 0);
+
+            // NEW: checkbox to the right of exclude input
             t.Controls.Add(chkOnlyWithNails, 4, 0);
 
             t.Controls.Add(lstInclude, 1, 1);
             t.Controls.Add(lstExclude, 3, 1);
 
-            // 使用 FlowLayoutPanel 並以 Padding 將 Remove 按鈕垂直置中
             var leftButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6), FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
             leftButtons.Controls.Add(btnRemoveInclude);
             leftButtons.Controls.Add(btnClearInclude);
@@ -226,13 +231,13 @@ namespace PowerNodeGenUI
             rightButtons.Controls.Add(btnRemoveExclude);
             rightButtons.Controls.Add(btnClearExclude);
             t.Controls.Add(rightButtons, 3, 2);
+
             panel.Controls.Add(t);
             return panel;
         }
 
         Control BuildRunPanel()
         {
-            // Submit + status moved out of keyword panel to avoid squeezing the keyword list area.
             var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10, 4, 10, 4) };
 
             var runPanel = new FlowLayoutPanel
@@ -244,10 +249,12 @@ namespace PowerNodeGenUI
                 Padding = new Padding(0, 2, 0, 2)
             };
 
-            // btnSubmit already has Margin (0,2,0,2). lblStatus uses same top/bottom margin and same Height.
             runPanel.Controls.Add(btnSubmit);
             runPanel.Controls.Add(lblStatus);
             runPanel.Controls.Add(btnOpenCsv);
+
+            // NEW
+            runPanel.Controls.Add(btnImportOldCsv);
 
             panel.Controls.Add(runPanel);
             return panel;
@@ -299,32 +306,21 @@ namespace PowerNodeGenUI
 
         void AddKeyword(TextBox box, ListBox list)
         {
-            var raw = (box.Text ?? "").Trim();
-            if (raw.Length == 0) return;
+            var key = box.Text.Trim();
+            if (string.IsNullOrEmpty(key)) return;
 
-            // Split 
-            char[] seps = new[] { ' ', '\t', '\r', '\n', ',', ';'};
-            var parts = raw.Split(seps, StringSplitOptions.RemoveEmptyEntries);
-
-            if (parts.Length == 0) { box.Clear(); return; }
-
-            // Fast de-dupe (case-insensitive)
-            var existing = new HashSet<string>(
-                list.Items.Cast<object>().Select(x => x?.ToString() ?? ""),
-                StringComparer.OrdinalIgnoreCase
-            );
-
-            foreach (var p in parts)
+            foreach (var item in list.Items)
             {
-                var key = p.Trim();
-                if (key.Length == 0) continue;
-                if (existing.Add(key))
-                    list.Items.Add(key);
+                if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
+                {
+                    box.Clear();
+                    return;
+                }
             }
 
+            list.Items.Add(key);
             box.Clear();
         }
-
 
         void RemoveSelected(ListBox list)
         {
@@ -379,6 +375,165 @@ namespace PowerNodeGenUI
             }
         }
 
+        // NEW: import old CSV, compare, pop out result
+        void ImportOldCsvAndCompare()
+        {
+            if (dgv.DataSource is not DataTable newDt || newDt.Rows.Count == 0)
+            {
+                MessageBox.Show("Please generate/load the NEW power node list first (so the grid has data), then import the old CSV to compare.");
+                return;
+            }
+
+            using var dlg = new OpenFileDialog
+            {
+                Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
+                Title = "Import Old Power Node List CSV"
+            };
+
+            if (dlg.ShowDialog() != DialogResult.OK) return;
+
+            DataTable oldDt;
+            try
+            {
+                oldDt = ReadCsvToDataTable(dlg.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to read old CSV.\n\n" + ex.Message);
+                return;
+            }
+
+            if (oldDt.Rows.Count == 0)
+            {
+                MessageBox.Show("Old CSV is empty.");
+                return;
+            }
+
+            DataTable diff;
+            try
+            {
+                diff = BuildDiffTable(oldDt, newDt);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Compare failed.\n\n" + ex.Message);
+                return;
+            }
+
+            using var diffDlg = new DiffDialog(diff, Path.GetFileName(dlg.FileName));
+            diffDlg.ShowDialog(this);
+        }
+
+        static string GetCell(DataRow row, string col)
+        {
+            if (!row.Table.Columns.Contains(col)) return "";
+            return row[col]?.ToString() ?? "";
+        }
+
+        static DataTable BuildDiffTable(DataTable oldDt, DataTable newDt)
+        {
+            string keyCol =
+                oldDt.Columns.Contains("net_id") && newDt.Columns.Contains("net_id") ? "net_id" :
+                oldDt.Columns.Contains("net_name") && newDt.Columns.Contains("net_name") ? "net_name" :
+                "";
+
+            if (string.IsNullOrEmpty(keyCol))
+                throw new InvalidOperationException("Cannot compare: both CSVs must contain net_id or net_name column.");
+
+            var diff = new DataTable();
+            diff.Columns.Add("Status");
+            diff.Columns.Add("net_id");
+            diff.Columns.Add("net_name");
+            diff.Columns.Add("changed_fields");
+            diff.Columns.Add("old_nail_id");
+            diff.Columns.Add("new_nail_id");
+            diff.Columns.Add("old_related_pins_cnt");
+            diff.Columns.Add("new_related_pins_cnt");
+            diff.Columns.Add("pins_list_changed");
+
+            var oldMap = new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataRow r in oldDt.Rows)
+            {
+                var k = GetCell(r, keyCol).Trim();
+                if (k.Length == 0) continue;
+                if (!oldMap.ContainsKey(k)) oldMap[k] = r;
+            }
+
+            var newMap = new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataRow r in newDt.Rows)
+            {
+                var k = GetCell(r, keyCol).Trim();
+                if (k.Length == 0) continue;
+                if (!newMap.ContainsKey(k)) newMap[k] = r;
+            }
+
+            var oldKeys = new HashSet<string>(oldMap.Keys, StringComparer.OrdinalIgnoreCase);
+            var newKeys = new HashSet<string>(newMap.Keys, StringComparer.OrdinalIgnoreCase);
+
+            // Added
+            foreach (var k in newKeys.Where(k => !oldKeys.Contains(k)))
+            {
+                var nr = newMap[k];
+                var dr = diff.NewRow();
+                dr["Status"] = "Added";
+                dr["net_id"] = GetCell(nr, "net_id");
+                dr["net_name"] = GetCell(nr, "net_name");
+                dr["new_nail_id"] = GetCell(nr, "nail_id");
+                dr["new_related_pins_cnt"] = GetCell(nr, "related_pins_cnt");
+                diff.Rows.Add(dr);
+            }
+
+            // Removed
+            foreach (var k in oldKeys.Where(k => !newKeys.Contains(k)))
+            {
+                var orow = oldMap[k];
+                var dr = diff.NewRow();
+                dr["Status"] = "Removed";
+                dr["net_id"] = GetCell(orow, "net_id");
+                dr["net_name"] = GetCell(orow, "net_name");
+                dr["old_nail_id"] = GetCell(orow, "nail_id");
+                dr["old_related_pins_cnt"] = GetCell(orow, "related_pins_cnt");
+                diff.Rows.Add(dr);
+            }
+
+            // Common -> Modified / Unchanged
+            foreach (var k in newKeys.Where(k => oldKeys.Contains(k)))
+            {
+                var orow = oldMap[k];
+                var nrow = newMap[k];
+
+                string oldNail = GetCell(orow, "nail_id");
+                string newNail = GetCell(nrow, "nail_id");
+
+                string oldPinsCnt = GetCell(orow, "related_pins_cnt");
+                string newPinsCnt = GetCell(nrow, "related_pins_cnt");
+
+                string oldPinsList = GetCell(orow, "related_pins_list");
+                string newPinsList = GetCell(nrow, "related_pins_list");
+
+                var changed = new List<string>();
+                if (!string.Equals(oldNail, newNail, StringComparison.OrdinalIgnoreCase)) changed.Add("nail_id");
+                if (!string.Equals(oldPinsCnt, newPinsCnt, StringComparison.OrdinalIgnoreCase)) changed.Add("related_pins_cnt");
+
+                bool pinsListChanged = !string.Equals(oldPinsList, newPinsList, StringComparison.Ordinal);
+                if (pinsListChanged) changed.Add("related_pins_list");
+
+                var dr = diff.NewRow();
+                dr["Status"] = changed.Count == 0 ? "Unchanged" : "Modified";
+                dr["net_id"] = GetCell(nrow, "net_id");
+                dr["net_name"] = GetCell(nrow, "net_name");
+                dr["changed_fields"] = string.Join(",", changed);
+                dr["old_nail_id"] = oldNail;
+                dr["new_nail_id"] = newNail;
+                dr["old_related_pins_cnt"] = oldPinsCnt;
+                dr["new_related_pins_cnt"] = newPinsCnt;
+                dr["pins_list_changed"] = pinsListChanged ? "Yes" : "No";
+                diff.Rows.Add(dr);
+            }
+
+            return diff;
+        }
+
         async Task RunAsync()
         {
             if (!File.Exists(txtNets.Text)) { MessageBox.Show("Nets.asc not found."); return; }
@@ -399,17 +554,17 @@ namespace PowerNodeGenUI
             string cfgPath = Path.Combine(Path.GetTempPath(), $"power_keywords_{Guid.NewGuid():N}.txt");
             WriteKeywordConfig(cfgPath);
 
-            //btnSubmit.Enabled = false;
             lblStatus.Text = "Running...";
             btnOpenCsv.Enabled = false;
 
             try
             {
-                var cmdArgs = $"--nets \"{txtNets.Text}\" --nails \"{txtNails.Text}\" --cfg \"{cfgPath}\" --out \"{outCsv}\"";
-                if (chkOnlyWithNails.Checked) cmdArgs += " --only-nails";
+                // append nails filter flag if checked
+                string args = $"--nets \"{txtNets.Text}\" --nails \"{txtNails.Text}\" --cfg \"{cfgPath}\" --out \"{outCsv}\"";
+                if (chkOnlyWithNails.Checked) args += " --only-nails";
 
                 var (code, so, se) = await Task.Run(() =>
-                    RunProcess(exePath, cmdArgs));
+                    RunProcess(exePath, args));
 
                 if (code != 0)
                 {
@@ -431,7 +586,6 @@ namespace PowerNodeGenUI
             }
             finally
             {
-                //btnSubmit.Enabled = true;
                 try { File.Delete(cfgPath); } catch { }
             }
         }
@@ -445,7 +599,6 @@ namespace PowerNodeGenUI
             // IMPORTANT: UTF-8 WITHOUT BOM (prevents C++ parser from rejecting first line)
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
-
 
         static (int exitCode, string stdOut, string stdErr) RunProcess(string exe, string args)
         {
@@ -577,6 +730,73 @@ namespace PowerNodeGenUI
             }
             result.Add(sb.ToString());
             return result;
+        }
+    }
+
+    // ✅ Compare old vs new power node list (diff view)
+    public class DiffDialog : Form
+    {
+        readonly DataTable diffTable;
+        readonly DataView view;
+
+        ComboBox cbo = new() { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList };
+        WinLabel lbl = new() { Dock = DockStyle.Top, AutoSize = false, Height = 26, TextAlign = System.Drawing.ContentAlignment.MiddleLeft };
+        DataGridView dgv = new() { Dock = DockStyle.Fill };
+
+        public DiffDialog(DataTable diffTable, string oldFileName)
+        {
+            this.diffTable = diffTable;
+            view = new DataView(diffTable);
+
+            Text = $"Compare Result (Old: {oldFileName})";
+            Width = 1100;
+            Height = 720;
+
+            cbo.Items.AddRange(new object[] { "All", "Added", "Removed", "Modified", "Unchanged" });
+            cbo.SelectedIndex = 0;
+            cbo.SelectedIndexChanged += (s, e) => ApplyFilter();
+
+            dgv.ReadOnly = true;
+            dgv.AllowUserToAddRows = false;
+            dgv.AllowUserToDeleteRows = false;
+            dgv.RowHeadersVisible = false;
+            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgv.MultiSelect = false;
+
+            dgv.DataSource = view;
+
+            Controls.Add(dgv);
+            Controls.Add(lbl);
+            Controls.Add(cbo);
+
+            UpdateSummary();
+        }
+
+        void ApplyFilter()
+        {
+            string sel = cbo.SelectedItem?.ToString() ?? "All";
+            if (sel == "All") view.RowFilter = "";
+            else view.RowFilter = $"Status = '{sel.Replace("'", "''")}'";
+
+            UpdateSummary();
+        }
+
+        void UpdateSummary()
+        {
+            int total = diffTable.Rows.Count;
+            int added = 0, removed = 0, modified = 0, unchanged = 0;
+
+            foreach (DataRow r in diffTable.Rows)
+            {
+                string s = r["Status"]?.ToString() ?? "";
+                if (s == "Added") added++;
+                else if (s == "Removed") removed++;
+                else if (s == "Modified") modified++;
+                else if (s == "Unchanged") unchanged++;
+            }
+
+            lbl.Text = $"Total: {total}   Added: {added}   Removed: {removed}   Modified: {modified}   Unchanged: {unchanged}";
         }
     }
 
