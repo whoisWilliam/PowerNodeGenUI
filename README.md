@@ -104,36 +104,6 @@ Recommended field comparison:
 - (optional) treat `related_pins_list` as “changed or not” because it can be large
 
 ---
-
-## Build Instructions
-
-### 1) Build the C++ backend (PowerNodeGen.exe)
-**Recommended environment:** Visual Studio 2019/2022 on Windows
-
-- Open the C++ solution/project (or create one around `PowerNodeGen.cpp`)
-- Use **C++17** or later
-- Build `Release x64`
-- Output: `PowerNodeGen.exe`
-
-### 2) Build the C# WinForms UI
-**Required:** .NET 6+ (WinForms)
-
-- Open the UI project in Visual Studio
-- Confirm target framework: `net6.0-windows` (or later)
-- Build `Release`
-
-### 3) Deployment / Run
-Copy `PowerNodeGen.exe` next to the UI executable:
-
-```
-PowerNodeGenUI.exe
-PowerNodeGen.exe
-```
-
-Then run `PowerNodeGenUI.exe`.
-
----
-
 ## User Guide (End-to-end)
 
 ### Generate a new Power Node List
