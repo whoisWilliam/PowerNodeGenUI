@@ -1,1 +1,208 @@
+<<<<<<< HEAD
 # PowerNodeGenUI
+=======
+# Power Node List Generator (C++ backend + C# WinForms UI)
+
+## Brief Introduction
+This project generates a **Power Node List** from PCB/EDA export files (e.g., `Nets.asc`, `Nails.asc`) and a **user-configurable keyword list**.  
+It consists of:
+
+- **C++ backend** (`PowerNodeGen.exe`): parses input files, applies keyword filtering, and outputs a CSV.
+- **C# WinForms UI**: helps users select inputs, configure keywords, run the backend, preview results, and compare against an imported former CSV.
+
+## Features
+
+### 1) Generate Power Node List (core)
+- Select input files:
+  - `Nets.asc`
+  - `Nails.asc`
+- Select output file directory
+- Configure power keywords:
+  - **Include** list (required)
+  - **Exclude** list (optional)
+  - Type in in the box and press **Enter** to add in list
+    - Also supporting seperating with `,`, ` `, `;`
+  - Click on the keyword and press **Remove** to remove from list
+  - **Clear** to clear the list
+- Click **Submit** to generate `PowerNodeList.csv`
+- Preview results in a grid (DataGridView)
+  - **View** for detailed dialog to view/search pins for a selected net.
+- **Open CSV** button launches the output CSV
+
+### 2) Optional filter: “Only show nets with nails”
+- UI checkbox: **Only show nets with nails**
+- Meaning: output only nets where `nail_id != 0`, while still respecting include/exclude keyword matching.
+
+### 3) Compare with an old Power Node List CSV (diff)
+- Click **Import Old CSV**
+- The tool compares **Old CSV vs New (current grid)** and pops a result table.
+- Diff status per row:
+  - `Added` / `Removed` / `Modified` / `Unchanged`
+- Built-in filter (dropdown) to show only specific statuses.
+
+---
+
+## Project Structure (suggested)
+You may organize the repository like this:
+
+```
+/PowerNodeGen/              # C++ backend
+  PowerNodeGen.cpp
+  ... (other parser sources, headers)
+  /bin/Release/PowerNodeGen.exe
+
+/PowerNodeGenUI/            # C# WinForms app
+  Form1.cs
+  PowerNodeGenUI.csproj
+  /bin/Release/net6.0-windows/PowerNodeGenUI.exe
+
+/inputs/                    # sample or test inputs (optional)
+  Nets.asc
+  Nails.asc
+  ... (future: Pins.asc, Parts.asc, Format.asc)
+```
+
+**Important:** the UI expects `PowerNodeGen.exe` to be located in the **same folder** as the UI executable (`AppContext.BaseDirectory`).
+
+---
+
+## Implementation Notes (How it works)
+
+### A) Keyword configuration file
+When you click **Submit**, the UI generates a temporary keyword config file:
+
+- `+<keyword>` lines are **Include** rules
+- `-<keyword>` lines are **Exclude** rules
+
+The file is written in **UTF-8 without BOM** to avoid first-line parsing issues in C++.
+
+### B) Backend command line
+The UI launches the backend in a separate process:
+
+```
+PowerNodeGen.exe --nets "<path to Nets.asc>" --nails "<path to Nails.asc>" --cfg "<keyword cfg>" --out "<output csv>" [--only-nails]
+```
+
+### C) CSV preview and actions
+After the backend finishes:
+- the UI loads CSV into a `DataTable`
+- binds the table to `DataGridView`
+- hides `related_pins_list` by default (too long)
+- adds a `Pins` button column to open a pins dialog
+
+### D) Compare (diff) logic
+On **Import Old CSV**:
+- Old CSV → `DataTable oldDt`
+- New CSV → current grid `DataTable newDt`
+- The tool compares using **`net_id`** if available on both sides; otherwise falls back to `net_name`.
+- Differences are categorized into:
+  - `Added`   = in new, not in old
+  - `Removed` = in old, not in new
+  - `Modified`= same key exists, but important fields differ
+  - `Unchanged`
+
+Recommended field comparison:
+- `nail_id`
+- `related_pins_cnt`
+- (optional) treat `related_pins_list` as “changed or not” because it can be large
+
+---
+
+## Build Instructions
+
+### 1) Build the C++ backend (PowerNodeGen.exe)
+**Recommended environment:** Visual Studio 2019/2022 on Windows
+
+- Open the C++ solution/project (or create one around `PowerNodeGen.cpp`)
+- Use **C++17** or later
+- Build `Release x64`
+- Output: `PowerNodeGen.exe`
+
+### 2) Build the C# WinForms UI
+**Required:** .NET 6+ (WinForms)
+
+- Open the UI project in Visual Studio
+- Confirm target framework: `net6.0-windows` (or later)
+- Build `Release`
+
+### 3) Deployment / Run
+Copy `PowerNodeGen.exe` next to the UI executable:
+
+```
+PowerNodeGenUI.exe
+PowerNodeGen.exe
+```
+
+Then run `PowerNodeGenUI.exe`.
+
+---
+
+## User Guide (End-to-end)
+
+### Generate a new Power Node List
+1. Launch the UI.
+2. Click **Browse** and choose:
+   - `Nets.asc`
+   - `Nails.asc`
+3. Set **Output CSV** path (default is Desktop `PowerNodeList.csv`).
+4. Add **Include** keywords:
+   - Type a keyword, press **Enter**.
+5. Optionally add **Exclude** keywords.
+6. Optional: check **Only show nets with nails**.
+7. Click **Submit**.
+8. After completion:
+   - Grid shows results
+   - Click **Open CSV** to open output file
+   - Click `Pins` column to view pins list
+
+### Compare with an older CSV
+1. Generate/load a new list first (so the grid contains the “New” list).
+2. Click **Import Old CSV**.
+3. Select an older `PowerNodeList.csv`.
+4. A compare window appears:
+   - Filter by status (Added/Removed/Modified/Unchanged)
+   - Use this to review what changed between runs/versions.
+
+---
+
+## Input / Output Formats
+
+### Input
+Current backend usage focuses on:
+- `Nets.asc`
+- `Nails.asc`
+
+### Output CSV (typical columns)
+- `net_id`
+- `net_name`
+- `nail_id`
+- `related_pins_cnt`
+- `related_pins_list`
+
+---
+
+## Troubleshooting
+
+### “Cannot find PowerNodeGen.exe”
+Make sure `PowerNodeGen.exe` is in the same folder as the UI executable.
+
+### “Include keywords is empty”
+At least one **Include** keyword is required to run.
+
+### Output CSV not generated
+- Confirm paths are correct
+- Check backend stderr in a debug build
+- Make sure output folder is writable
+- Might want to close the .csv first
+
+### CSV preview looks wrong
+If your CSV contains quotes/commas inside fields, ensure backend outputs valid CSV quoting (UI parser supports quoted CSV).
+
+---
+
+%%## Roadmap / Suggested Enhancements
+- Step1: robust parsing for all 5 input files (`Nails.asc`, `Nets.asc`, `Pins.asc`, `Parts.asc`, `Format.asc`) and a parsing report.
+- Add “Open output folder” button (Explorer select CSV).
+- Add “Export keywords” / “Import keywords” to reuse lists.
+- Improve pin list compare with a dedicated diff view (VS-like side-by-side highlights).%%
+>>>>>>> c2ec095e4190e08cf33fe2afa8c50bd17e5323b6
