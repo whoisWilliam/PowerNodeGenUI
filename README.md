@@ -1,5 +1,5 @@
 # Power Node List Generator (C++ backend + C# WinForms UI)
-
+* **Nutshell** : Download `run.zip` from the [release page] and run `PowerNodeGenUI.exe` to generate a Power Node List CSV from  export files with keyword filtering and optional diffing against an old CSV.
 ## Brief Introduction
 This project generates a **Power Node List** from PCB/EDA export files (e.g., `Nets.asc`, `Nails.asc`) and a **user-configurable keyword list**.  
 It consists of:
