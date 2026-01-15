@@ -450,6 +450,8 @@ namespace PowerNodeGenUI
             diff.Columns.Add("old_related_pins_cnt");
             diff.Columns.Add("new_related_pins_cnt");
             diff.Columns.Add("pins_list_changed");
+            diff.Columns.Add("old_related_pins_list");
+            diff.Columns.Add("new_related_pins_list");
 
             var oldMap = new Dictionary<string, DataRow>(StringComparer.OrdinalIgnoreCase);
             foreach (DataRow r in oldDt.Rows)
@@ -480,6 +482,7 @@ namespace PowerNodeGenUI
                 dr["net_name"] = GetCell(nr, "net_name");
                 dr["new_nail_id"] = GetCell(nr, "nail_id");
                 dr["new_related_pins_cnt"] = GetCell(nr, "related_pins_cnt");
+                dr["new_related_pins_list"] = GetCell(nr, "related_pins_list");
                 diff.Rows.Add(dr);
             }
 
@@ -493,6 +496,7 @@ namespace PowerNodeGenUI
                 dr["net_name"] = GetCell(orow, "net_name");
                 dr["old_nail_id"] = GetCell(orow, "nail_id");
                 dr["old_related_pins_cnt"] = GetCell(orow, "related_pins_cnt");
+                dr["old_related_pins_list"] = GetCell(orow, "related_pins_list");
                 diff.Rows.Add(dr);
             }
 
@@ -528,6 +532,9 @@ namespace PowerNodeGenUI
                 dr["old_related_pins_cnt"] = oldPinsCnt;
                 dr["new_related_pins_cnt"] = newPinsCnt;
                 dr["pins_list_changed"] = pinsListChanged ? "Yes" : "No";
+                dr["old_related_pins_list"] = oldPinsList;
+                dr["new_related_pins_list"] = newPinsList;
+
                 diff.Rows.Add(dr);
             }
 
@@ -765,12 +772,42 @@ namespace PowerNodeGenUI
             dgv.MultiSelect = false;
 
             dgv.DataSource = view;
+            if (dgv.Columns.Contains("old_related_pins_list")) dgv.Columns["old_related_pins_list"].Visible = false;
+            if (dgv.Columns.Contains("new_related_pins_list")) dgv.Columns["new_related_pins_list"].Visible = false;
+
+            dgv.CellDoubleClick += (s, e) => OpenPinsDiff(e.RowIndex);
 
             Controls.Add(dgv);
             Controls.Add(lbl);
             Controls.Add(cbo);
 
             UpdateSummary();
+        }
+        void OpenPinsDiff(int rowIndex)
+        {
+            if (rowIndex < 0 || rowIndex >= dgv.Rows.Count) return;
+
+            if (dgv.Rows[rowIndex].DataBoundItem is not DataRowView rv) return;
+
+            string oldPins = rv.Row.Table.Columns.Contains("old_related_pins_list")
+                ? (rv.Row["old_related_pins_list"]?.ToString() ?? "")
+                : "";
+            string newPins = rv.Row.Table.Columns.Contains("new_related_pins_list")
+                ? (rv.Row["new_related_pins_list"]?.ToString() ?? "")
+                : "";
+
+            if (string.IsNullOrEmpty(oldPins) && string.IsNullOrEmpty(newPins))
+            {
+                MessageBox.Show("No pins list available for diff.");
+                return;
+            }
+
+            string netId = rv.Row.Table.Columns.Contains("net_id") ? (rv.Row["net_id"]?.ToString() ?? "") : "";
+            string netName = rv.Row.Table.Columns.Contains("net_name") ? (rv.Row["net_name"]?.ToString() ?? "") : "";
+            string status = rv.Row.Table.Columns.Contains("Status") ? (rv.Row["Status"]?.ToString() ?? "") : "";
+
+            using var dlg = new PinsDiffDialog(netId, netName, oldPins, newPins, status);
+            dlg.ShowDialog(this);
         }
 
         void ApplyFilter()
@@ -797,6 +834,186 @@ namespace PowerNodeGenUI
             }
 
             lbl.Text = $"Total: {total}   Added: {added}   Removed: {removed}   Modified: {modified}   Unchanged: {unchanged}";
+        }
+    }
+    public class PinsDiffDialog : Form
+    {
+        readonly RichTextBox rtbOld = new() { Dock = DockStyle.Fill, ReadOnly = true, WordWrap = false };
+        readonly RichTextBox rtbNew = new() { Dock = DockStyle.Fill, ReadOnly = true, WordWrap = false };
+        readonly Label lbl = new() { Dock = DockStyle.Top, AutoSize = false, Height = 28, TextAlign = System.Drawing.ContentAlignment.MiddleLeft };
+
+        public PinsDiffDialog(string netId, string netName, string oldPinsCsvCell, string newPinsCsvCell, string status)
+        {
+            Text = "Pins Compare";
+            Width = 1200;
+            Height = 720;
+
+            lbl.Text = $"Net: #{netId} {netName}   Status: {status}   (Double-click rows in compare table to open)";
+
+            var mono = new System.Drawing.Font("Consolas", 10);
+            rtbOld.Font = mono;
+            rtbNew.Font = mono;
+
+            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, Padding = new Padding(10) };
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 24));
+            t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            t.Controls.Add(new Label { Text = "Old", Dock = DockStyle.Fill, TextAlign = System.Drawing.ContentAlignment.MiddleLeft }, 0, 0);
+            t.Controls.Add(new Label { Text = "New", Dock = DockStyle.Fill, TextAlign = System.Drawing.ContentAlignment.MiddleLeft }, 1, 0);
+            t.Controls.Add(rtbOld, 0, 1);
+            t.Controls.Add(rtbNew, 1, 1);
+
+            Controls.Add(t);
+            Controls.Add(lbl);
+
+            var oldLines = SplitPinsToLines(oldPinsCsvCell);
+            var newLines = SplitPinsToLines(newPinsCsvCell);
+
+            RenderSideBySideDiff(oldLines, newLines);
+        }
+
+        static string[] SplitPinsToLines(string pinsCsvCell)
+        {
+            if (string.IsNullOrEmpty(pinsCsvCell)) return Array.Empty<string>();
+            return pinsCsvCell
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => p.Length > 0)
+                .ToArray();
+        }
+
+        enum OpKind { Equal, Delete, Insert }
+        struct DiffOp { public OpKind Kind; public string Text; public DiffOp(OpKind k, string t) { Kind = k; Text = t; } }
+
+        // Myers diff (line-based, efficient enough for typical pins lists)
+        static List<DiffOp> Diff(string[] a, string[] b)
+        {
+            int n = a.Length, m = b.Length;
+            int max = n + m;
+            int offset = max;
+            var v = new int[2 * max + 1];
+            var trace = new List<int[]>();
+
+            for (int d = 0; d <= max; d++)
+            {
+                var vCopy = new int[v.Length];
+                Array.Copy(v, vCopy, v.Length);
+                trace.Add(vCopy);
+
+                for (int k = -d; k <= d; k += 2)
+                {
+                    int idx = k + offset;
+                    int x;
+
+                    if (k == -d || (k != d && v[idx - 1] < v[idx + 1]))
+                        x = v[idx + 1];
+                    else
+                        x = v[idx - 1] + 1;
+
+                    int y = x - k;
+
+                    while (x < n && y < m && string.Equals(a[x], b[y], StringComparison.Ordinal))
+                    {
+                        x++; y++;
+                    }
+
+                    v[idx] = x;
+
+                    if (x >= n && y >= m)
+                        return Backtrack(trace, a, b, offset);
+                }
+            }
+
+            return new List<DiffOp>();
+        }
+
+        static List<DiffOp> Backtrack(List<int[]> trace, string[] a, string[] b, int offset)
+        {
+            int x = a.Length;
+            int y = b.Length;
+            var ops = new List<DiffOp>();
+
+            for (int d = trace.Count - 1; d >= 0; d--)
+            {
+                var v = trace[d];
+                int k = x - y;
+                int idx = k + offset;
+
+                int prevK;
+                if (k == -d || (k != d && v[idx - 1] < v[idx + 1]))
+                    prevK = k + 1;
+                else
+                    prevK = k - 1;
+
+                int prevX = v[prevK + offset];
+                int prevY = prevX - prevK;
+
+                while (x > prevX && y > prevY)
+                {
+                    ops.Add(new DiffOp(OpKind.Equal, a[x - 1]));
+                    x--; y--;
+                }
+
+                if (d == 0) break;
+
+                if (x == prevX)
+                {
+                    ops.Add(new DiffOp(OpKind.Insert, b[prevY]));
+                    y = prevY;
+                }
+                else
+                {
+                    ops.Add(new DiffOp(OpKind.Delete, a[prevX]));
+                    x = prevX;
+                }
+            }
+
+            ops.Reverse();
+            return ops;
+        }
+
+        void RenderSideBySideDiff(string[] oldLines, string[] newLines)
+        {
+            var ops = Diff(oldLines, newLines);
+
+            rtbOld.Clear();
+            rtbNew.Clear();
+
+            int oldNo = 1, newNo = 1;
+
+            foreach (var op in ops)
+            {
+                if (op.Kind == OpKind.Equal)
+                {
+                    AppendLine(rtbOld, $"{oldNo,5}  {op.Text}");
+                    AppendLine(rtbNew, $"{newNo,5}  {op.Text}");
+                    oldNo++; newNo++;
+                }
+                else if (op.Kind == OpKind.Delete)
+                {
+                    AppendLine(rtbOld, $"{oldNo,5}  {op.Text}", System.Drawing.Color.FromArgb(255, 230, 230)); // red
+                    AppendLine(rtbNew, $"{"",5}  ", System.Drawing.Color.White);
+                    oldNo++;
+                }
+                else // Insert
+                {
+                    AppendLine(rtbOld, $"{"",5}  ", System.Drawing.Color.White);
+                    AppendLine(rtbNew, $"{newNo,5}  {op.Text}", System.Drawing.Color.FromArgb(230, 240, 255)); // blue
+                    newNo++;
+                }
+            }
+        }
+
+        static void AppendLine(RichTextBox rtb, string text, System.Drawing.Color? back = null)
+        {
+            var oldBack = rtb.SelectionBackColor;
+            if (back.HasValue) rtb.SelectionBackColor = back.Value;
+
+            rtb.AppendText(text + Environment.NewLine);
+
+            rtb.SelectionBackColor = oldBack;
         }
     }
 
