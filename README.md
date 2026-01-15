@@ -39,30 +39,6 @@ It consists of:
 
 ---
 
-## Project Structure (suggested)
-You may organize the repository like this:
-
-```
-/PowerNodeGen/              # C++ backend
-  PowerNodeGen.cpp
-  ... (other parser sources, headers)
-  /bin/Release/PowerNodeGen.exe
-
-/PowerNodeGenUI/            # C# WinForms app
-  Form1.cs
-  PowerNodeGenUI.csproj
-  /bin/Release/net6.0-windows/PowerNodeGenUI.exe
-
-/inputs/                    # sample or test inputs (optional)
-  Nets.asc
-  Nails.asc
-  ... (future: Pins.asc, Parts.asc, Format.asc)
-```
-
-**Important:** the UI expects `PowerNodeGen.exe` to be located in the **same folder** as the UI executable (`AppContext.BaseDirectory`).
-
----
-
 ## Implementation Notes (How it works)
 
 ### A) Keyword configuration file
@@ -104,23 +80,28 @@ Recommended field comparison:
 - (optional) treat `related_pins_list` as “changed or not” because it can be large
 
 ---
-## User Guide (End-to-end)
+## User Guide 
 
 ### Generate a new Power Node List
-1. Launch the UI.
-2. Click **Browse** and choose:
-   - `Nets.asc`
-   - `Nails.asc`
-3. Set **Output CSV** path (default is Desktop `PowerNodeList.csv`).
-4. Add **Include** keywords:
-   - Type a keyword, press **Enter**.
-5. Optionally add **Exclude** keywords.
-6. Optional: check **Only show nets with nails**.
-7. Click **Submit**.
-8. After completion:
-   - Grid shows results
-   - Click **Open CSV** to open output file
-   - Click `Pins` column to view pins list
+
+1. **Download** `run.zip` from the release page.
+2. **Unzip** the folder and run `PowerNodeGenUI.exe`.
+3. **Launch** the UI application.
+4. Click **Browse** and select the following files:
+* `Nets.asc`
+* `Nails.asc`
+
+
+5. **Set the Output CSV path** (the default location is your Desktop as `PowerNodeList.csv`).
+6. **Add Include keywords**: Type a keyword and press **Enter**.
+7. **Optionally add Exclude keywords** using the same method.
+8. **Optional**: Check the box for **Only show nets with nails** if needed.
+9. Click **Submit**.
+10. **Review the results**:
+* The grid will display the final data.
+* Click **Open CSV** to launch the output file.
+* Click the **Pins** column to view the specific pins list.
+---
 
 ### Compare with an older CSV
 1. Generate/load a new list first (so the grid contains the “New” list).
@@ -172,4 +153,3 @@ If your CSV contains quotes/commas inside fields, ensure backend outputs valid C
 - Add “Open output folder” button (Explorer select CSV).
 - Add “Export keywords” / “Import keywords” to reuse lists.
 - Improve pin list compare with a dedicated diff view (VS-like side-by-side highlights).%%
->>>>>>> c2ec095e4190e08cf33fe2afa8c50bd17e5323b6
