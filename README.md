@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# PowerNodeGenUI
-=======
 # Power Node List Generator (C++ backend + C# WinForms UI)
 
 ## Brief Introduction
