@@ -50,8 +50,7 @@ namespace PowerNodeGenUI
         public Form1()
         {
             Text = "Power Node List Generator";
-            Width = 1920;
-            Height = 1080;
+            WindowState = FormWindowState.Maximized;
             this.Font = new WinFont("Segoe UI", 10);
 
             // Enter 直接送出
