@@ -18,7 +18,7 @@ It consists of:
   - **Include** list (required)
   - **Exclude** list (optional)
   - Type in in the box and press **Enter** to add in list
-    - Also supporting seperating with `,`, ` `, `;`
+    - Also supporting separating with `,`, ` `, `;`
   - Click on the keyword and press **Remove** to remove from list
   - **Clear** to clear the list
 - Click **Submit** to generate `PowerNodeList.csv`
