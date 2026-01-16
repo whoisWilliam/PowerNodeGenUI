@@ -26,8 +26,6 @@ namespace PowerNodeGenUI
         TextBox txtExclude = new() { Width = 260 };
         ListBox lstInclude = new() { Width = 260, Height = 110 };
         ListBox lstExclude = new() { Width = 260, Height = 110 };
-
-        // Only show nets with nails (nail_id != 0)
         CheckBox chkOnlyWithNails = new() { Text = "Only show nets with nails", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(10, 6, 0, 0) };
 
         Button btnRemoveInclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
@@ -39,8 +37,6 @@ namespace PowerNodeGenUI
         WinLabel lblStatus = new() { AutoSize = false, Text = "Ready", Width = 300, Height = 36, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, Margin = new Padding(8, 2, 0, 2) };
 
         Button btnOpenCsv = new() { Text = "Open CSV", Width = 120, Height = 36, Margin = new Padding(8, 2, 0, 2) };
-
-        // NEW: import old CSV to compare
         Button btnImportOldCsv = new() { Text = "Import Old CSV", Width = 150, Height = 36, Margin = new Padding(8, 2, 0, 2) };
 
         DataGridView dgv = new() { Dock = DockStyle.Fill };
@@ -52,9 +48,8 @@ namespace PowerNodeGenUI
             Text = "Power Node List Generator";
             WindowState = FormWindowState.Maximized;
             this.Font = new WinFont("Segoe UI", 10);
-
-            // Enter 直接送出
-            //this.AcceptButton = btnSubmit;
+            this.AutoScaleMode = AutoScaleMode.Dpi;
+            this.AutoScroll = true;
 
             var root = new TableLayoutPanel
             {
@@ -63,7 +58,7 @@ namespace PowerNodeGenUI
                 ColumnCount = 1,
                 Padding = new Padding(8)
             };
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 135));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 135)); // file panel
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 260)); // keywords (taller so list area is more usable)
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));  // run bar (Submit + status)
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -76,13 +71,9 @@ namespace PowerNodeGenUI
 
             lstInclude.BorderStyle = BorderStyle.FixedSingle;
             lstInclude.IntegralHeight = false;
-            //lstInclude.Dock = DockStyle.Fill;
-            lstInclude.Height = 1220;
 
             lstExclude.BorderStyle = BorderStyle.FixedSingle;
             lstExclude.IntegralHeight = false;
-            //lstExclude.Dock = DockStyle.Fill;
-            lstExclude.Height = 1220;
 
             // default output
             txtOutCsv.Text = Path.Combine(
@@ -90,7 +81,7 @@ namespace PowerNodeGenUI
                 "PowerNodeList.csv"
             );
 
-            // Enter to add keyword
+            // keyword input handlers
             txtInclude.KeyDown += (s, e) =>
             {
                 if (e.KeyCode == Keys.Enter) { AddKeyword(txtInclude, lstInclude); e.SuppressKeyPress = true; }
@@ -106,12 +97,12 @@ namespace PowerNodeGenUI
             btnClearExclude.Click += (s, e) => lstExclude.Items.Clear();
 
             btnSubmit.Click += async (s, e) => await RunAsync();
-
+            // open csv
             btnOpenCsv.Click += (s, e) => OpenCsv();
             btnOpenCsv.Enabled = File.Exists(txtOutCsv.Text.Trim());
             txtOutCsv.TextChanged += (s, e) => btnOpenCsv.Enabled = File.Exists(txtOutCsv.Text.Trim());
 
-            // NEW
+            // cmp
             btnImportOldCsv.Click += (s, e) => ImportOldCsvAndCompare();
 
             SetupGridStyle();
@@ -125,8 +116,6 @@ namespace PowerNodeGenUI
 
             var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 3 };
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
-            //t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            //t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
 
             Button btnBrowseNets = new() { Text = "Browse", Anchor = AnchorStyles.Left, Height = 28, Margin = new Padding(0) };
             Button btnBrowseNails = new() { Text = "Browse", Anchor = AnchorStyles.Left, Height = 28, Margin = new Padding(0) };
@@ -136,7 +125,7 @@ namespace PowerNodeGenUI
             btnBrowseNails.Click += (s, e) => PickFile(txtNails, "ASC files (*.asc)|*.asc|All files (*.*)|*.*");
             btnBrowseOut.Click += (s, e) => PickSaveFile(txtOutCsv, "CSV files (*.csv)|*.csv|All files (*.*)|*.*");
 
-            // Use fixed-size labels docked and vertically centered to align with textboxes
+            // Use fixed-size labels 
             var lblNets = new WinLabel
             {
                 Text = "Nets.asc",
@@ -184,9 +173,9 @@ namespace PowerNodeGenUI
             // inputs + lists + button row
             var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 3 };
 
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
@@ -215,7 +204,7 @@ namespace PowerNodeGenUI
             t.Controls.Add(lblExclude, 2, 0);
             t.Controls.Add(txtExclude, 3, 0);
 
-            // NEW: checkbox to the right of exclude input
+            // checkbox to the right of exclude input
             t.Controls.Add(chkOnlyWithNails, 4, 0);
 
             t.Controls.Add(lstInclude, 1, 1);
@@ -282,27 +271,13 @@ namespace PowerNodeGenUI
             dgv.CellContentClick += Dgv_CellContentClick;
             dgv.CellDoubleClick += (s, e) => ShowPinsForRow(e.RowIndex);
         }
-
         // ---------------- keyword actions ----------------
 
-        //void AddKeyword(TextBox box, ListBox list)
-        //{
-        //    var key = box.Text.Trim();
-        //    if (string.IsNullOrEmpty(key)) return;
 
-        //    foreach (var item in list.Items)
-        //    {
-        //        if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
-        //        {
-        //            box.Clear();
-        //            return;
-        //        }
-        //    }
-
-        //    list.Items.Add(key);
-        //    box.Clear();
-        //}
-
+        /// Adds a keyword from a textbox into the given listbox.
+        /// Trims whitespace
+        /// Ignores empty input
+        /// duplicates 
         void AddKeyword(TextBox box, ListBox list)
         {
             var key = box.Text.Trim();
@@ -374,7 +349,7 @@ namespace PowerNodeGenUI
             }
         }
 
-        // NEW: import old CSV, compare, pop out result
+        //import old CSV, compare, pop out result
         void ImportOldCsvAndCompare()
         {
             if (dgv.DataSource is not DataTable newDt || newDt.Rows.Count == 0)
@@ -428,7 +403,7 @@ namespace PowerNodeGenUI
             if (!row.Table.Columns.Contains(col)) return "";
             return row[col]?.ToString() ?? "";
         }
-
+        // Build diff table between old and new DataTables
         static DataTable BuildDiffTable(DataTable oldDt, DataTable newDt)
         {
             string keyCol =
@@ -602,7 +577,7 @@ namespace PowerNodeGenUI
             foreach (var item in lstInclude.Items) sb.AppendLine("+" + item.ToString());
             foreach (var item in lstExclude.Items) sb.AppendLine("-" + item.ToString());
 
-            // IMPORTANT: UTF-8 WITHOUT BOM (prevents C++ parser from rejecting first line)
+            //  UTF-8 WITHOUT BOM 
             File.WriteAllText(path, sb.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
 
@@ -632,7 +607,7 @@ namespace PowerNodeGenUI
             dgv.Columns.Clear();
             dgv.DataSource = dt;
 
-            // pins list 太長：先隱藏
+            // pins list hirden
             if (dgv.Columns.Contains("related_pins_list"))
                 dgv.Columns["related_pins_list"].Visible = false;
 
@@ -673,7 +648,8 @@ namespace PowerNodeGenUI
             dlg.ShowDialog(this);
         }
 
-        // ---------------- CSV parser (quoted csv supported) ----------------
+        // ---------------- CSV parser  ----------------
+        // Reads a CSV file into a DataTable for easy binding to DataGridView.
 
         static DataTable ReadCsvToDataTable(string path)
         {
@@ -739,7 +715,7 @@ namespace PowerNodeGenUI
         }
     }
 
-    // ✅ Compare old vs new power node list (diff view)
+    // Compare old vs new power node list 
     public class DiffDialog : Form
     {
         readonly DataTable diffTable;
@@ -886,7 +862,7 @@ namespace PowerNodeGenUI
         enum OpKind { Equal, Delete, Insert }
         struct DiffOp { public OpKind Kind; public string Text; public DiffOp(OpKind k, string t) { Kind = k; Text = t; } }
 
-        // Myers diff (line-based, efficient enough for typical pins lists)
+        // Myers diff
         static List<DiffOp> Diff(string[] a, string[] b)
         {
             int n = a.Length, m = b.Length;
@@ -1016,7 +992,7 @@ namespace PowerNodeGenUI
         }
     }
 
-    // ✅ pins 太長時，用彈窗展開
+    // pins too long: show in a popup dialog
     public class PinsDialog : Form
     {
         TextBox txtSearch = new() { Dock = DockStyle.Top, PlaceholderText = "Search..." };
@@ -1066,3 +1042,4 @@ namespace PowerNodeGenUI
         }
     }
 }
+
