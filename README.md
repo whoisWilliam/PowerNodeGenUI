@@ -146,6 +146,9 @@ At least one **Include** keyword is required to run.
 ### CSV preview looks wrong
 If your CSV contains quotes/commas inside fields, ensure backend outputs valid CSV quoting (UI parser supports quoted CSV).
 
+### Abnormal display
+Try to change screen to 100% scaling (DPI) and restart the exe.
+
 ---
 
 %%## Roadmap / Suggested Enhancements
