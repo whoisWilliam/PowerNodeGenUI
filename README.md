@@ -1,5 +1,5 @@
 # Power Node List Generator (C++ backend + C# WinForms UI)
-* **Nutshell** : Download `run.zip` from the [release page] and run `PowerNodeGenUI.exe` to generate a Power Node List CSV from  export files with keyword filtering and optional diffing against an old CSV.
+* **Nutshell** : Download `run.zip` from the [release page], and in the folder, run `PowerNodeGenUI.exe` to generate a Power Node List CSV from  export files with keyword filtering and optional diffing against an imported old CSV. 
 * Better to run at display 100% :(
 ## Brief Introduction
 This project generates a **Power Node List** from PCB/EDA export files (e.g., `Nets.asc`, `Nails.asc`) and a **user-configurable keyword list**.  
@@ -40,7 +40,7 @@ It consists of:
 
 ---
 
-## Implementation Notes (How it works)
+## Implementation Notes
 
 ### A) Keyword configuration file
 When you click **Submit**, the UI generates a temporary keyword config file:
@@ -64,7 +64,7 @@ After the backend finishes:
 - hides `related_pins_list` by default (too long)
 - adds a `Pins` button column to open a pins dialog
 
-### D) Compare (diff) logic
+### D) Compare
 On **Import Old CSV**:
 - Old CSV → `DataTable oldDt`
 - New CSV → current grid `DataTable newDt`
@@ -151,9 +151,3 @@ If your CSV contains quotes/commas inside fields, ensure backend outputs valid C
 Try to change screen to 100% scaling (DPI) and restart the exe.
 
 ---
-
-%%## Roadmap / Suggested Enhancements
-- Step1: robust parsing for all 5 input files (`Nails.asc`, `Nets.asc`, `Pins.asc`, `Parts.asc`, `Format.asc`) and a parsing report.
-- Add “Open output folder” button (Explorer select CSV).
-- Add “Export keywords” / “Import keywords” to reuse lists.
-- Improve pin list compare with a dedicated diff view (VS-like side-by-side highlights).%%
