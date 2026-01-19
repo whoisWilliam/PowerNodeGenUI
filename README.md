@@ -1,4 +1,4 @@
-# Power Node List Generator (C++ backend + C# WinForms UI)
+# Power Node List Generator
 * **Nutshell** : Download `run.zip` from the [release page], and in the folder, run `PowerNodeGenUI.exe` to generate a Power Node List CSV from  export files with keyword filtering and optional diffing against an imported old CSV. 
 * Better to run at display 100% :(
 ## Brief Introduction
