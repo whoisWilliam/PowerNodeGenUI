@@ -58,7 +58,7 @@ namespace PowerNodeGenUI
                 ColumnCount = 1,
                 Padding = new Padding(8)
             };
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 135)); // file panel
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // file panel
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 260)); // keywords (taller so list area is more usable)
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));  // run bar (Submit + status)
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -112,9 +112,9 @@ namespace PowerNodeGenUI
 
         Control BuildFilePanel()
         {
-            var panel = new GroupBox { Text = "Input / Output", Dock = DockStyle.Fill, Padding = new Padding(10) };
+            var panel = new GroupBox { Text = "Input / Output", Dock = DockStyle.Fill, Padding = new Padding(10), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
 
-            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 3 };
+            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 3, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
 
             Button btnBrowseNets = new() { Text = "Browse", Anchor = AnchorStyles.Left, Height = 28, Margin = new Padding(0) };
@@ -256,7 +256,7 @@ namespace PowerNodeGenUI
         }
 
         void SetupGridStyle()
-        {
+        {   
             dgv.AllowUserToAddRows = false;
             dgv.AllowUserToDeleteRows = false;
             dgv.ReadOnly = true;
