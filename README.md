@@ -1,4 +1,4 @@
-# Power Node List Generator (C++ backend + C# WinForms UI)
+# Power Node List Generator
 * **Nutshell** : Download `run.zip` from the [release page], and in the folder, run `PowerNodeGenUI.exe` to generate a Power Node List CSV from  export files with keyword filtering and optional diffing against an imported old CSV. 
 * Better to run at display 100/125% :(
 ## Brief Introduction
@@ -19,7 +19,7 @@ It consists of:
   - **Include** list (required)
   - **Exclude** list (optional)
   - Type in in the box and press **Enter** to add in list
-    - Also supporting separating with `,`, ` `, `;`
+    - Also supporting separating with `,`, ` `, `;`,`\n'`...
   - Click on the keyword and press **Remove** to remove from list
   - **Clear** to clear the list
 - Click **Submit** to generate `PowerNodeList.csv`
