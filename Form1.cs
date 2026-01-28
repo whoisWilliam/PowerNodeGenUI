@@ -28,10 +28,10 @@ namespace PowerNodeGenUI
         ListBox lstExclude = new() { Width = 260, Height = 110 };
         CheckBox chkOnlyWithNails = new() { Text = "Only show nets with nails", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(10, 6, 0, 0) };
 
-        Button btnRemoveInclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
-        Button btnRemoveExclude = new() { Text = "Remove", Width = 90, Height = 28, Margin = new Padding(0) };
-        Button btnClearInclude = new() { Text = "Clear", Width = 90, Height = 28, Margin = new Padding(0) };
-        Button btnClearExclude = new() { Text = "Clear", Width = 90, Height = 28, Margin = new Padding(0) };
+        Button btnRemoveInclude = new() { Text = "Remove", AutoSize = true, Height = 28, Margin = new Padding(0) };
+        Button btnRemoveExclude = new() { Text = "Remove", AutoSize = true, Height = 28, Margin = new Padding(0) };
+        Button btnClearInclude = new() { Text = "Clear", AutoSize = true, Height = 28, Margin = new Padding(0) };
+        Button btnClearExclude = new() { Text = "Clear", AutoSize = true, Height = 28, Margin = new Padding(0) };
 
         Button btnSubmit = new() { Text = "Submit", Width = 140, Height = 36, Margin = new Padding(0, 2, 0, 2) };
         WinLabel lblStatus = new() { AutoSize = false, Text = "Ready", Width = 300, Height = 36, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, Margin = new Padding(8, 2, 0, 2) };
@@ -117,9 +117,9 @@ namespace PowerNodeGenUI
             var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 3, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
 
-            Button btnBrowseNets = new() { Text = "Browse", Anchor = AnchorStyles.Left, Height = 28, Margin = new Padding(0) };
-            Button btnBrowseNails = new() { Text = "Browse", Anchor = AnchorStyles.Left, Height = 28, Margin = new Padding(0) };
-            Button btnBrowseOut = new() { Text = "Browse", Anchor = AnchorStyles.Left, Height = 28, Margin = new Padding(0) };
+            Button btnBrowseNets = new() { Text = "Browse", Anchor = AnchorStyles.Left, AutoSize = true, Height = 28, Margin = new Padding(0) };
+            Button btnBrowseNails = new() { Text = "Browse", Anchor = AnchorStyles.Left, AutoSize = true, Height = 28, Margin = new Padding(0) };
+            Button btnBrowseOut = new() { Text = "Browse", Anchor = AnchorStyles.Left, AutoSize = true, Height = 28, Margin = new Padding(0) };
 
             btnBrowseNets.Click += (s, e) => PickFile(txtNets, "ASC files (*.asc)|*.asc|All files (*.*)|*.*");
             btnBrowseNails.Click += (s, e) => PickFile(txtNails, "ASC files (*.asc)|*.asc|All files (*.*)|*.*");
@@ -173,15 +173,17 @@ namespace PowerNodeGenUI
             // inputs + lists + button row
             var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 3, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
 
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 81));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 84));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 30));       // inputs
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));       // inputs
+
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));       // list
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));       // remove buttons
+            t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             // labels
             var lblInclude = new WinLabel
@@ -233,8 +235,9 @@ namespace PowerNodeGenUI
                 Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
+                Padding = new Padding(0, 2, 0, 2),  
                 AutoSize = true,
-                Padding = new Padding(0, 2, 0, 2)
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
             };
 
             runPanel.Controls.Add(btnSubmit);
