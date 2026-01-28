@@ -59,8 +59,8 @@ namespace PowerNodeGenUI
                 Padding = new Padding(8)
             };
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // file panel
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 260)); // keywords (taller so list area is more usable)
-            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));  // run bar (Submit + status)
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize)); // keywords (taller so list area is more usable)
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));  // run bar (Submit + status)
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             root.Controls.Add(BuildFilePanel(), 0, 0);
@@ -168,10 +168,10 @@ namespace PowerNodeGenUI
 
         Control BuildKeywordPanel()
         {
-            var panel = new GroupBox { Text = "Keywords", Dock = DockStyle.Fill, Padding = new Padding(10) };
+            var panel = new GroupBox {Text = "Keywords", Dock = DockStyle.Fill, Padding = new Padding(10), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
 
             // inputs + lists + button row
-            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 3 };
+            var t = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 5, RowCount = 3, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
 
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 280));
@@ -226,14 +226,14 @@ namespace PowerNodeGenUI
 
         Control BuildRunPanel()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10, 4, 10, 4) };
+            var panel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(10, 4, 10, 4), AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
 
             var runPanel = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
-                AutoSize = false,
+                AutoSize = true,
                 Padding = new Padding(0, 2, 0, 2)
             };
 
