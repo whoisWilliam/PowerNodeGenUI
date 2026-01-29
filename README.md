@@ -75,10 +75,6 @@ On **Import Old CSV**:
   - `Modified`= same key exists, but important fields differ
   - `Unchanged`
 
-Recommended field comparison:
-- `nail_id`
-- `related_pins_cnt`
-- (optional) treat `related_pins_list` as “changed or not” because it can be large
 
 ---
 ## User Guide 
