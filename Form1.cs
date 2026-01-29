@@ -281,24 +281,53 @@ namespace PowerNodeGenUI
         /// Trims whitespace
         /// Ignores empty input
         /// duplicates 
+        //void AddKeyword(TextBox box, ListBox list)
+        //{
+        //    var key = box.Text.Trim();
+        //    if (string.IsNullOrEmpty(key)) return;
+
+        //    foreach (var item in list.Items)
+        //    {
+        //        if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
+        //        {
+        //            box.Clear();
+        //            return;
+        //        }
+        //    }
+
+        //    list.Items.Add(key);
+        //    box.Clear();
+        //}
         void AddKeyword(TextBox box, ListBox list)
         {
-            var key = box.Text.Trim();
-            if (string.IsNullOrEmpty(key)) return;
+            var separators = new[] { ',', ';', ' ', '\t', '\n', '\r' };
 
-            foreach (var item in list.Items)
+            var tokens = box.Text.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var token in tokens)
             {
-                if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
+                var key = token.Trim();
+                if (string.IsNullOrEmpty(key)) continue;
+
+                // Check for dup
+                bool exists = false;
+                foreach (var item in list.Items)
                 {
-                    box.Clear();
-                    return;
+                    if (string.Equals(item.ToString(), key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                // doesn't already exist
+                if (!exists)
+                {
+                    list.Items.Add(key);
                 }
             }
-
-            list.Items.Add(key);
             box.Clear();
         }
-
         void RemoveSelected(ListBox list)
         {
             if (list.SelectedIndex >= 0)

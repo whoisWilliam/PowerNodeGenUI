@@ -610,3 +610,4 @@ int main(int argc, char* argv[]) {
     generate_power_node_list_csv(nets, nails, cfg, out, only_with_nails);
     return 0;
 }
+
